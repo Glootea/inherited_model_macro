@@ -1,0 +1,19 @@
+name: inherited_model_macro
+description: Macro that generates boilerplate code for `InheritedModel` and simplifies state management
+version: 0.1.1
+homepage: https://github.com/Glootea/inherited_model_macro
+
+environment:
+  sdk: ^3.5.0-152
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  macros: ^0.1.2-main.4
+  meta: ^1.15.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
