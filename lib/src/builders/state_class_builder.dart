@@ -20,21 +20,25 @@ class StateClassBuilder {
     required this.stubName,
   });
 
-  Future<void> build() async {
-    final code = <Object>[
-      "augment class $stateClassName {\n",
-      ..._fieldsDeclaration(),
-      ..._initStateDeclaration(),
-      ..._updateMethodDeclaration(),
-      ..._buildMethodDeclaration(),
-      "}\n",
-    ];
-
-    builder.declareInLibrary(DeclarationCode.fromParts(code));
+  void build() {
+    _declareClassStart();
+    _fieldsDeclaration();
+    _initStateDeclaration();
+    _updateMethodDeclaration();
+    _buildMethodDeclaration();
+    _declareClassEnd();
   }
 
-  Iterable<Object> _fieldsDeclaration() =>
-      fields.map(__declareField).expand((e) => e);
+  void _declareClassStart() => builder.declareInLibrary(
+      DeclarationCode.fromString("augment class $stateClassName {\n"));
+
+  void _declareClassEnd() =>
+      builder.declareInLibrary(DeclarationCode.fromString("}"));
+
+  void _fieldsDeclaration() => builder.declareInLibrary(
+        DeclarationCode.fromParts(
+            fields.map(__declareField).expand((e) => e).toList()),
+      );
 
   Iterable<Object> __declareField(FieldDeclaration field) => [
         "\t late ",
@@ -42,15 +46,18 @@ class StateClassBuilder {
         " ${field.identifier.name};\n",
       ];
 
-  Iterable<Object> _initStateDeclaration() => [
-        "\n\t",
-        "@",
-        dep.override,
-        "\n\tvoid initState() {\n",
-        "\t\tsuper.initState();\n",
-        ...fields.map(__initStateFieldDeclaration).expand((e) => e),
-        "\t}\n",
-      ];
+  void _initStateDeclaration() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          "\n\t",
+          "@",
+          dep.override,
+          "\n\tvoid initState() {\n",
+          "\t\tsuper.initState();\n",
+          ...fields.map(__initStateFieldDeclaration).expand((e) => e),
+          "\t}\n",
+        ],
+      ));
 
   Iterable<Object> __initStateFieldDeclaration(
     FieldDeclaration field,
@@ -62,14 +69,17 @@ class StateClassBuilder {
         "widget.${field.identifier.name};\n",
       ];
 
-  Iterable<Object> _updateMethodDeclaration() => [
-        "\n\tvoid _update({\n",
-        ...fields.map(__updateMethodFieldDeclaration).expand((e) => e),
-        '\t}) => \n',
-        '\t\tsetState(() {\n',
-        ...fields.map(__updateMethodFieldAssignDeclaration).expand((e) => e),
-        '\t\t});\n',
-      ];
+  void _updateMethodDeclaration() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          "\n\tvoid _update({\n",
+          ...fields.map(__updateMethodFieldDeclaration).expand((e) => e),
+          '\t}) => \n',
+          '\t\tsetState(() {\n',
+          ...fields.map(__updateMethodFieldAssignDeclaration).expand((e) => e),
+          '\t\t});\n',
+        ],
+      ));
 
   Iterable<Object> __updateMethodFieldDeclaration(
     FieldDeclaration field,
@@ -98,21 +108,24 @@ class StateClassBuilder {
         '  : this.${field.identifier.name};\n',
       ];
 
-  Iterable<Object> _buildMethodDeclaration() => [
-        '\n\t@',
-        dep.override,
-        '\n\t',
-        dep.widget,
-        ' build(',
-        dep.context,
-        ' context) =>\n\t\t',
-        initialClassName,
-        '(\n',
-        ...fields.map(__buildMethodFieldDeclaration).expand((e) => e),
-        '\t\t\tupdateState: _update,\n',
-        '\t\t\tchild: widget.child,\n',
-        '\t\t);\n',
-      ];
+  void _buildMethodDeclaration() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          '\n\t@',
+          dep.override,
+          '\n\t',
+          dep.widget,
+          ' build(',
+          dep.context,
+          ' context) =>\n\t\t',
+          initialClassName,
+          '(\n',
+          ...fields.map(__buildMethodFieldDeclaration).expand((e) => e),
+          '\t\t\tupdateState: _update,\n',
+          '\t\t\tchild: widget.child,\n',
+          '\t\t);\n',
+        ],
+      ));
 
   Iterable<Object> __buildMethodFieldDeclaration(FieldDeclaration field) => [
         '\t\t\t',

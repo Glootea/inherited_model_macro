@@ -18,27 +18,29 @@ class HolderClassBuilder {
     required this.stateClass,
   });
 
-  Future<void> build() async {
-    final code = <Object>[
-      "augment class $holderType {\n",
-      ..._fieldsDeclaration(),
-      ..._childDeclaration(),
-      ..._constructorDeclaration(),
-      ..._createStateDeclaration(),
-      "}\n",
-    ];
-
-    builder.declareInLibrary(DeclarationCode.fromParts(code));
+  void build() {
+    _declareClassStart();
+    _declareFields();
+    _declareChild();
+    _declareConstructor();
+    _declareCreateState();
+    _declareClassEnd();
   }
 
-  Iterable<Object> _childDeclaration() => [
+  void _declareClassStart() => builder.declareInLibrary(
+      DeclarationCode.fromString("augment class $holderType {"));
+
+  void _declareClassEnd() =>
+      builder.declareInLibrary(DeclarationCode.fromString("}"));
+
+  void _declareChild() => builder.declareInLibrary(DeclarationCode.fromParts([
         "\tfinal ",
         dep.widget,
-        " child;\n",
-      ];
+        " child;",
+      ]));
 
-  Iterable<Object> _fieldsDeclaration() =>
-      fields.map(__declareField).expand((e) => e);
+  void _declareFields() => builder.declareInLibrary(DeclarationCode.fromParts(
+      fields.map(__declareField).expand((e) => e).toList()));
 
   Iterable<Object> __declareField(FieldDeclaration field) => [
         "\tfinal ",
@@ -48,19 +50,21 @@ class HolderClassBuilder {
         ";\n",
       ];
 
-  Iterable<Object> _constructorDeclaration() => [
+  void _declareConstructor() =>
+      builder.declareInLibrary(DeclarationCode.fromParts([
         "\n\tconst ",
         holderType,
         "({",
         ...fields.map(__declareConstructorField).expand((e) => e),
         "\n\t\trequired this.child,",
-        "\n\t});\n"
-      ];
+        "\n\t});"
+      ]));
 
   Iterable<Object> __declareConstructorField(FieldDeclaration field) =>
       ['\n\t\trequired this.${field.identifier.name},'];
 
-  Iterable<Object> _createStateDeclaration() => [
+  void _declareCreateState() =>
+      builder.declareInLibrary(DeclarationCode.fromParts([
         "\n\t@",
         dep.override,
         "\n\t",
@@ -70,6 +74,6 @@ class HolderClassBuilder {
         ">",
         " createState() => ",
         stateClass,
-        "();\n"
-      ];
+        "();"
+      ]));
 }

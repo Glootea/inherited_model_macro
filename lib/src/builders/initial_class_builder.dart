@@ -20,24 +20,26 @@ class InitialClassBuilder {
     required this.initialClassName,
   });
 
-  Future<void> build() async {
+  void build() {
     _checkRequirements();
 
-    final code = [
-      "augment class $initialClassName{\n",
-      ..._constructorDeclaration(),
-      ..._updateFieldsDeclaration(),
-      ..._updateShouldNotifyDeclaration(),
-      ..._updateShouldNotifiDependentDeclaration(),
-      ..._updateFunctionDeclaration(),
-      ..._fieldWatchFunctionsDeclaration(),
-      ..._fieldReadFunctionsDeclaration(),
-      ..._instanceOfFunctionDeclaration(),
-      "}\n",
-    ];
-
-    builder.declareInLibrary(DeclarationCode.fromParts(code));
+    _declareClassStart();
+    _declareConstructor();
+    _declareUpdateFields();
+    _declareUpdateShouldNotify();
+    _declareUpdateShouldNotifiDependent();
+    _declareUpdateFunction();
+    _declareFieldWatchFunctions();
+    _declareFieldReadFunctions();
+    _declareInstanceOfFunction();
+    _declareClassEnd();
   }
+
+  void _declareClassStart() => builder.declareInLibrary(
+      DeclarationCode.fromString("augment class $initialClassName{\n"));
+
+  void _declareClassEnd() =>
+      builder.declareInLibrary(DeclarationCode.fromString("}"));
 
   void _checkRequirements() {
     if (constructors.isNotEmpty) {
@@ -75,19 +77,22 @@ class InitialClassBuilder {
     }
   }
 
-  Iterable<Object> _constructorDeclaration() => [
-        '\tconst ',
-        initialClassName,
-        '({\n',
-        ...fields.map(__constructorFieldDeclaration).expand((e) => e),
-        '\t\trequired this.updateState,',
-        '\n\t\trequired ',
-        dep.widget,
-        '\n\t\tchild,',
-        dep.key,
-        '? key,',
-        '\n\t}) : super(child: child, key: key);\n'
-      ];
+  void _declareConstructor() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          '\tconst ',
+          initialClassName,
+          '({\n',
+          ...fields.map(__constructorFieldDeclaration).expand((e) => e),
+          '\t\trequired this.updateState,',
+          '\n\t\trequired ',
+          dep.widget,
+          '\n\t\tchild,',
+          dep.key,
+          '? key,',
+          '\n\t}) : super(child: child, key: key);\n'
+        ],
+      ));
 
   Iterable<Object> __constructorFieldDeclaration(FieldDeclaration field) => [
         '\t\trequired this.',
@@ -95,48 +100,57 @@ class InitialClassBuilder {
         ',\n',
       ];
 
-  Iterable<Object> _updateFieldsDeclaration() => [
-        '\n',
-        '\t///Use this method to update state directly on instance\n',
-        '\tfinal void Function({\n',
-        ...fields.map(__updateFieldFieldDeclaration).expand((e) => e),
-        '\t}) updateState;\n'
-      ];
+  void _declareUpdateFields() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          '\n',
+          '\t///Use this method to update state directly on instance\n',
+          '\tfinal void Function({\n',
+          ...fields.map(__updateFieldFieldDeclaration).expand((e) => e),
+          '\t}) updateState;\n'
+        ],
+      ));
 
   Iterable<Object> __updateFieldFieldDeclaration(FieldDeclaration field) =>
       ['\t\t', field.type.code.asNullable, " ${field.identifier.name},\n"];
 
-  Iterable<Object> _updateShouldNotifyDeclaration() => [
-        '\n',
-        '\t@',
-        dep.override,
-        '\n\t',
-        dep.boolIdentifier,
-        ' updateShouldNotify($initialClassName oldWidget) =>\n',
-        fields.map(__updateShouldNotifyFieldDeclaration).join(' ||\n'),
-        ';\n',
-      ];
+  void _declareUpdateShouldNotify() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          '\n',
+          '\t@',
+          dep.override,
+          '\n\t',
+          dep.boolIdentifier,
+          ' updateShouldNotify($initialClassName oldWidget) =>\n',
+          fields.map(__updateShouldNotifyFieldDeclaration).join(' ||\n'),
+          ';\n',
+        ],
+      ));
 
   String __updateShouldNotifyFieldDeclaration(FieldDeclaration field) =>
       '\t\t${field.identifier.name} != oldWidget.${field.identifier.name}';
 
-  Iterable<Object> _updateShouldNotifiDependentDeclaration() => [
-        '\n\t@',
-        dep.override,
-        '\n\t',
-        dep.boolIdentifier,
-        ' updateShouldNotifyDependent(\n\t\t$initialClassName oldWidget,\n\t\t',
-        dep.setIdentifier,
-        '<',
-        dep.string,
-        '>',
-        ' dependencies) {\n',
-        ...fields
-            .map(__updateShouldNotifiDependentFieldDeclaration)
-            .expand((e) => e),
-        '\t\treturn false;\n',
-        '\t}\n',
-      ];
+  void _declareUpdateShouldNotifiDependent() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          '\n\t@',
+          dep.override,
+          '\n\t',
+          dep.boolIdentifier,
+          ' updateShouldNotifyDependent(\n\t\t$initialClassName oldWidget,\n\t\t',
+          dep.setIdentifier,
+          '<',
+          dep.string,
+          '>',
+          ' dependencies) {\n',
+          ...fields
+              .map(__updateShouldNotifiDependentFieldDeclaration)
+              .expand((e) => e),
+          '\t\treturn false;\n',
+          '\t}\n',
+        ],
+      ));
 
   Iterable<Object> __updateShouldNotifiDependentFieldDeclaration(
     FieldDeclaration field,
@@ -153,27 +167,30 @@ class InitialClassBuilder {
         '  return true;\n',
       ];
 
-  Iterable<Object> _updateFunctionDeclaration() => [
-        '\n\t///Use this method to find instance of class and update its state\n',
-        '\tstatic void update(\n\t\t',
-        dep.context,
-        ' context, {\n',
-        ...fields
-            .map((field) => [
-                  '\t\t',
-                  field.type.code.asNullable,
-                  ' ',
-                  field.identifier.name,
-                  ',\n'
-                ])
-            .expand((e) => e),
-        '\t}) {\n',
-        '\t\tfinal model = getInstance(context);\n',
-        '\t\tmodel.updateState(\n',
-        ...fields.map(__updateFunctionFieldDeclaration).expand((e) => e),
-        '\t\t);\n',
-        '\t}\n'
-      ];
+  void _declareUpdateFunction() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          '\n\t///Use this method to find instance of class and update its state\n',
+          '\tstatic void update(\n\t\t',
+          dep.context,
+          ' context, {\n',
+          ...fields
+              .map((field) => [
+                    '\t\t',
+                    field.type.code.asNullable,
+                    ' ',
+                    field.identifier.name,
+                    ',\n'
+                  ])
+              .expand((e) => e),
+          '\t}) {\n',
+          '\t\tfinal model = getInstance(context);\n',
+          '\t\tmodel.updateState(\n',
+          ...fields.map(__updateFunctionFieldDeclaration).expand((e) => e),
+          '\t\t);\n',
+          '\t}\n'
+        ],
+      ));
 
   Iterable<Object> __updateFunctionFieldDeclaration(FieldDeclaration field) => [
         '\t\t\t${field.identifier.name}',
@@ -182,52 +199,63 @@ class InitialClassBuilder {
         ',\n',
       ];
 
-  Iterable<Object> _fieldWatchFunctionsDeclaration() => fields
-      .map((field) => [
-            '\n\t///Makes the widget listen to changes on `${field.identifier.name}` field\n',
-            '\tstatic ',
-            field.type.code,
-            ' watch',
-            field.identifier.name.capitalized,
-            '(',
-            dep.context,
-            ' context) =>\n\t\t',
-            dep.inheritedModel,
-            '.inheritFrom<',
-            initialClassName,
-            ">(\n\t\t\tcontext,\n\t\t\taspect: '",
-            field.identifier.name,
-            "',\n\t\t)!.",
-            field.identifier.name,
-            ";\n",
-          ])
-      .expand((e) => e);
+  void _declareFieldWatchFunctions() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(fields
+          .map(
+            (field) => [
+              '\n\t///Makes the widget listen to changes on `${field.identifier.name}` field\n',
+              '\tstatic ',
+              field.type.code,
+              ' watch',
+              field.identifier.name.capitalized,
+              '(',
+              dep.context,
+              ' context) =>\n\t\t',
+              dep.inheritedModel,
+              '.inheritFrom<',
+              initialClassName,
+              ">(\n\t\t\tcontext,\n\t\t\taspect: '",
+              field.identifier.name,
+              "',\n\t\t)!.",
+              field.identifier.name,
+              ";\n",
+            ],
+          )
+          .expand((e) => e)
+          .toList()));
 
-  Iterable<Object> _fieldReadFunctionsDeclaration() => fields
-      .map((field) => [
-            '\n\t///Returns value of `${field.identifier.name}` field without listening to it\n',
-            '\tstatic ',
-            field.type.code,
-            ' read',
-            field.identifier.name.capitalized,
-            '(',
-            dep.context,
-            ' context) =>\n\t\t',
-            initialClassName,
-            '.getInstance(context).${field.identifier.name}'
-                ";\n",
-          ])
-      .expand((e) => e);
+  void _declareFieldReadFunctions() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(fields
+          .map(
+            (field) => [
+              '\n\t///Returns value of `${field.identifier.name}` field without listening to it\n',
+              '\tstatic ',
+              field.type.code,
+              ' read',
+              field.identifier.name.capitalized,
+              '(',
+              dep.context,
+              ' context) =>\n\t\t',
+              initialClassName,
+              '.getInstance(context).${field.identifier.name}'
+                  ";\n",
+            ],
+          )
+          .expand((e) => e)
+          .toList()));
 
-  Iterable<Object> _instanceOfFunctionDeclaration() => [
-        '\n\tstatic ',
-        initialClassName,
-        ' getInstance(',
-        dep.context,
-        ' context) =>\n\t\t',
-        'context.getInheritedWidgetOfExactType',
-        '<',
-        initialClassName,
-        '>()!;\n',
-      ];
+  void _declareInstanceOfFunction() =>
+      builder.declareInLibrary(DeclarationCode.fromParts(
+        [
+          '\n\tstatic ',
+          initialClassName,
+          ' getInstance(',
+          dep.context,
+          ' context) =>\n\t\t',
+          'context.getInheritedWidgetOfExactType',
+          '<',
+          initialClassName,
+          '>()!;\n',
+        ],
+      ));
 }

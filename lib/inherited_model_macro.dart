@@ -102,7 +102,7 @@ macro class InheritedModelMacro implements ClassTypesMacro, ClassDeclarationsMac
       stateClass: stateType,
       fields: fields,
     );
-    final holderFuture =  holderClassBuilder.build();
+     holderClassBuilder.build();
 
     final holderStateClassBuilder = StateClassBuilder(
       builder: builder,
@@ -113,7 +113,7 @@ macro class InheritedModelMacro implements ClassTypesMacro, ClassDeclarationsMac
       stubName: stubName,
     );
 
-    final holderStateFuture =  holderStateClassBuilder.build();
+      holderStateClassBuilder.build();
 
     final initialClassBuilder = InitialClassBuilder(
       builder: builder,
@@ -124,9 +124,8 @@ macro class InheritedModelMacro implements ClassTypesMacro, ClassDeclarationsMac
       initialClassName: initialClassName,
     );
 
-    final initialStateFuture =  initialClassBuilder.build();
+   initialClassBuilder.build();
   
-  await Future.wait([holderFuture, holderStateFuture, initialStateFuture]);
 
   _declareStub( stubName, dep, builder);
   }
