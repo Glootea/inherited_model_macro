@@ -8,56 +8,64 @@ import 'package:macros/macros.dart';
 /// Macro that generate boilerplate code for `InheritedModel`
 macro class InheritedModelMacro implements ClassTypesMacro, ClassDeclarationsMacro {
 /// ## Macro that generate boilerplate code for `InheritedModel`
-/// 
-/// All you need to do is declare class with fields (and methods to update values) and annotate it with `@InheritedModelMacro()`:
-/// ``` dart
-///  @InheritedModelMacro()
-///  class LogoModel extends InheritedModel<String> { // Your class MUST extends InheritedModel\<String>
-///    final Color? backgroundColor; // nullable types are also supported in update methods
-///    final bool large;
-/// 
-///    void toggleColor(BuildContext context) {
-///      final newValue = (backgroundColor == null) ? Colors.red : null;
-///      updateState(backgroundColor: newValue);
-///    }
-/// 
-///    void toggleSize(BuildContext context) {
-///      updateState(large: large != true);
-///    }
-///  }
-/// ```
-/// Then insert generated Holder class in a tree like `Provider` or `InheritedWidget`. 
-/// ``` dart
-/// Scaffold(
-///    body: const LogoModelHolder(
-///      backgroundColor: Colors.blue,
-///      large: false,
-///      child: Content(),
-///  )
-/// ```
-/// 
-/// 
-/// # Generated code
-/// ## Holder class
-/// ## Your class
-/// ``` dart
-/// class LogoModel {
-///   // get field value
-///   static field readField(context) 
-/// 
-///   // get field value and subscribe to it's changes. When value changes, widget will be redrawn
-///   static field watchField(context) 
-/// 
-///   // find instance and update given fields
-///   static void update(context, fields?) 
-/// 
-///   // update fields directly
-///   void updateState(fields?) 
-/// 
-///   // get nearest instanse of class up in the tree
-///   static Class getInstance(context) 
-/// }
-/// ``` 
+///Declare class with field (and methods to update them) and annotate it with `@InheritedModelMacro()` to generate code for full `InheritedModel` (it must extend `InheritedModel<String>`):
+///
+///``` dart
+/// @InheritedModelMacro()
+/// class LogoModel extends InheritedModel<String> {
+///   final Color? backgroundColor; // setting values to null is also supported in update methods
+///   final bool large;
+///
+///   void toggleColor(BuildContext context) {
+///     final newValue = (backgroundColor == null) ? Colors.red : null;
+///     updateState(backgroundColor: newValue); // updateState is generated method
+///   }
+///
+///   void toggleSize(BuildContext context) {
+///     updateState(large: large != true);
+///   }
+/// }
+///```
+///
+///Then insert generated Holder class in a tree like `Provider` or `InheritedWidget` and provide initial values for fields:
+///``` dart
+///Scaffold(
+///   body: const LogoModelHolder(
+///     backgroundColor: Colors.blue,
+///     large: false,
+///     child: Content(),
+/// )
+///```
+///
+///In your class this code will be generated:
+///``` dart
+///class LogoModel {
+///  // get field value
+///  static FieldType readField(context) // for every field
+///
+///  // get field value and subscribe to it's changes. When value changes, widget will be redrawn
+///  static FieldType watchField(context) // for every field
+///
+///  // find instance and update given fields
+///  static void update(context, {fields?}) 
+///
+///  // update fields directly
+///  void updateState({fields?}) 
+///
+///  // get nearest instanse of class up in the tree
+///  static Type getInstance(context) 
+///}
+///```
+///
+///Then you can use it like this:
+///```dart
+///// get current value and update it
+///final currentSize = LogoModel.readLarge(context);
+///LogoModel.update(context, large: !currentSize);
+///
+///// subscribe to changes 
+///final Color? color = LogoModel.watchBackgroundColor(context);
+///```
   const InheritedModelMacro();
 
 	String _classHolderName(ClassDeclaration clazz) => "${clazz.identifier.name}Holder";
